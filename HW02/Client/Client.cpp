@@ -10,14 +10,10 @@
 #define BUFF_SIZE 2048
 #define MESSAGE_QUEUE_SIZE 2048*5+4
 #define ENDING_DELIMITER "\r\n"
-#define SUCCESS_PREFIX "+"
-#define FAILED_PREFIX "-"
-
-
+#define SUCCESS_PREFIX '+'
+#define FAILED_PREFIX '-'
 
 #pragma comment(lib, "Ws2_32.lib")
-
-char** splitString(char* string, int size, const char* delimiter, int* elemNumber);
 
 int main(int argc, char* argv[])
 {
@@ -90,9 +86,8 @@ int main(int argc, char* argv[])
 		printf("Send to server: ");
 		gets_s(buff, BUFF_SIZE);
 		strcat_s(buff, ENDING_DELIMITER);
-		//strcat_s(buff, "abc\r\n");
 		messageLen = strlen(buff);
-		if (messageLen == 0) break;
+		if (messageLen == 2) break;
 
 		ret = send(client, buff, messageLen, 0);
 		if (ret == SOCKET_ERROR)
@@ -114,7 +109,22 @@ int main(int argc, char* argv[])
 		else if (strlen(buff) > 0)
 		{
 			buff[ret] = 0;
-			printf("Receive from server: %s\n", buff);
+			const char* returnState;
+
+			if (buff[0] == SUCCESS_PREFIX)
+			{
+				returnState = "Success";
+			}
+			else if (buff[0] == FAILED_PREFIX)
+			{
+				returnState = "Failed";
+			}
+			else
+			{
+				returnState = "Unknown";
+			}
+
+			printf("Receive from server: %s\n%s\n\n", returnState, buff + 1);
 		}
 	}
 
@@ -125,24 +135,4 @@ int main(int argc, char* argv[])
 	WSACleanup();
 
 	return 0;
-}
-
-char** splitString(char* string, int size, const char* delimiter, int* elemNumber)
-{
-	char** ptr = (char**)malloc(size * sizeof(char*));
-	char* p = string;
-	char* next_p = NULL;
-	int i = 0;
-
-	p = strtok_s(string, delimiter, &next_p);
-
-	while (p != NULL)
-	{
-		ptr[i++] = p;
-		p = strtok_s(NULL, delimiter, &next_p);
-	}
-
-	*elemNumber = i;
-
-	return ptr;
 }
