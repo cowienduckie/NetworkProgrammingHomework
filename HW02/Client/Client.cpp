@@ -8,7 +8,12 @@
 #define SERVER_PORT_DEFAULT 5500
 #define SERVER_ADDR_DEFAULT "127.0.0.1"
 #define BUFF_SIZE 2048
+#define MESSAGE_QUEUE_SIZE 2048*5+4
 #define ENDING_DELIMITER "\r\n"
+#define SUCCESS_PREFIX "+"
+#define FAILED_PREFIX "-"
+
+
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -84,6 +89,8 @@ int main(int argc, char* argv[])
 		//Send message
 		printf("Send to server: ");
 		gets_s(buff, BUFF_SIZE);
+		strcat_s(buff, ENDING_DELIMITER);
+		//strcat_s(buff, "abc\r\n");
 		messageLen = strlen(buff);
 		if (messageLen == 0) break;
 

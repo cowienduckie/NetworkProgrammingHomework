@@ -11,10 +11,14 @@
 #define BUFF_SIZE 2048
 #define MESSAGE_QUEUE_SIZE 2048*5+4
 #define ENDING_DELIMITER "\r\n"
+#define SUCCESS_PREFIX "+"
+#define FAILED_PREFIX "-"
 
 #pragma comment(lib, "Ws2_32.lib")
 
 unsigned __stdcall ClientProcess(void* data);
+
+long long calcSum(char* string);
 
 char** splitString(char* string, int size, const char* delimiter, int* elemNumber);
 
@@ -153,7 +157,7 @@ unsigned __stdcall ClientProcess(void* data)
 
 				int elemNumber = 0;
 				char** messages = splitString((char*)&messageQueue, MESSAGE_QUEUE_SIZE, ENDING_DELIMITER, &elemNumber);
-
+				
 				// Check the last one
 				char* last = messages[elemNumber - 1];
 				int lastLen = strlen(last);
@@ -172,11 +176,20 @@ unsigned __stdcall ClientProcess(void* data)
 				{
 					char returnMessage[BUFF_SIZE];
 
-					strcpy_s(returnMessage, messages[i]);
-					strcat_s(returnMessage, "\n");
+					// Calculate sum of numeric string, if not, return value = -1
+					long long sum = calcSum(messages[i]);
 
-					printf("Sent to client: %s [%d]\n", returnMessage, strlen(returnMessage));
+					if (sum != -1)	//Success
+					{
+						sprintf_s(returnMessage, "+%lld", sum);
+						strcat_s(returnMessage, "\n");
+					}
+					else	//Failed
+					{
+						strcpy_s(returnMessage, "-Failed: String contains non-number character.\n");
+					}
 
+					// Send return message for client
 					ret = send(connSock, returnMessage, strlen(returnMessage), 0);
 
 					if (ret == SOCKET_ERROR)
@@ -205,8 +218,25 @@ unsigned __stdcall ClientProcess(void* data)
 	closesocket(connSock);
 }
 
-char* calcSum(char* string)
+long long calcSum(char* string)
 {
+	int len = strlen(string);
+	long long sum = 0;
+
+	for (int i = 0; i < len; ++i)
+	{
+		if (isdigit(string[i]))
+		{
+			sum += 1ll * (string[i] - '0');
+		}
+		else
+		{
+			sum = -1;
+			break;
+		}
+	}
+
+	return sum;
 }
 
 char** splitString(char* string, int size, const char* delimiter, int* elemNumber)
